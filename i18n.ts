@@ -7,8 +7,9 @@ import * as Backend from 'i18next-http-backend';
 
 i18n
   .use(initReactI18next) // passes i18n down to react-i18next
-  // FIX: Pass the imported module namespace directly to `.use()`.
-  .use(Backend)
+  // FIX: Pass the .default property of the imported module namespace to .use().
+  // The namespace object itself is not a valid plugin.
+  .use(Backend.default)
   .init({
     // the translations
     // (tip move them in a JSON file and import them,

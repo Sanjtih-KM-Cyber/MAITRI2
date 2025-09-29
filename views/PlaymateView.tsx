@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from '../types';
 import CompanionView from './CompanionView';
-import { PLAYMATE_SYSTEM_PROMPT } from '../config/ai_prompts';
-import VoiceVideoFeedback from '../components/common/VoiceVideoFeedback';
 
 interface PlaymateViewProps {
   setView: (view: View) => void;
@@ -29,10 +27,7 @@ const PlaymateView: React.FC<PlaymateViewProps> = ({ setView }) => {
         <h1 className="text-2xl md:text-3xl font-bold text-primary-text mx-auto pr-16 md:pr-24">{t('views.playmate.title')}</h1>
       </header>
       <div className="flex-grow flex flex-col relative">
-        <VoiceVideoFeedback isActive={isChatListening} />
         <CompanionView 
-          persona="playmate"
-          systemPrompt={PLAYMATE_SYSTEM_PROMPT}
           initialMessage={t('playmate.initialMessage')}
           onListeningStateChange={setIsChatListening}
         />

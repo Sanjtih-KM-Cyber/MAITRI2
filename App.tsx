@@ -1,6 +1,4 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ThemeProvider } from './context/ThemeContext';
-import { SettingsProvider } from './context/SettingsContext';
 import Dashboard from './views/Dashboard';
 import CompanionView from './views/CompanionView';
 import GuardianView from './views/GuardianView';
@@ -11,18 +9,6 @@ import TacticalDial from './components/nav/TacticalDial';
 import { View } from './types';
 import { startListening } from './services/voiceService';
 import { parseCommand } from './services/commandService';
-import { processUpdatePacket } from './services/baseStationHandler';
-import { useHomeTime } from './hooks/useHomeTime';
-import { applyTimeOfDayTheme } from './services/themeService';
-import HomeTimeIndicator from './components/common/HomeTimeIndicator';
-
-const TimeThemeManager: React.FC = () => {
-    const { timeOfDay } = useHomeTime();
-    useEffect(() => {
-        applyTimeOfDayTheme(timeOfDay);
-    }, [timeOfDay]);
-    return null; // This component only manages side effects
-}
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -31,29 +17,6 @@ const App: React.FC = () => {
   const navigateTo = useCallback((view: View) => {
     setCurrentView(view);
   }, []);
-
-  // Simulate receiving initial mission data packet from Base Station on app load
-  useEffect(() => {
-    const setupInitialData = async () => {
-      try {
-        console.log("Fetching initial mission data packet...");
-        // Use fetch to load the JSON data file, which is more robust than a static import.
-        const response = await fetch('./data/missionDataPacket.json');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const missionDataPacket = await response.json();
-
-        console.log("Simulating initial data packet from Base Station...");
-        await processUpdatePacket(JSON.stringify(missionDataPacket));
-      } catch (error) {
-        console.error("Failed to load or process initial mission data:", error);
-      }
-    };
-    // This runs only once to seed the local DB
-    setupInitialData();
-  }, []);
-
 
   useEffect(() => {
     // This is a simplified hotword implementation. In a real app,
@@ -89,7 +52,7 @@ const App: React.FC = () => {
       case 'dashboard':
         return <Dashboard setView={navigateTo} />;
       case 'chat':
-        return <CompanionView setView={navigateTo} persona="chat" />;
+        return <CompanionView setView={navigateTo} />;
       case 'guardian':
         return <GuardianView setView={navigateTo} />;
       case 'coPilot':
@@ -104,18 +67,14 @@ const App: React.FC = () => {
   }
 
   return (
-    <SettingsProvider>
-      <ThemeProvider>
-        <TimeThemeManager />
-        <main className="h-screen w-screen bg-background text-primary-text font-sans overflow-hidden transition-colors duration-1000">
-          <div className="h-full w-full overflow-auto">
-            {renderView()}
-          </div>
-          <HomeTimeIndicator />
-          <TacticalDial onRoleSelect={navigateTo} />
-        </main>
-      </ThemeProvider>
-    </SettingsProvider>
+    <>
+      <main className="h-screen w-screen bg-background text-primary-text font-sans overflow-hidden transition-colors duration-1000">
+        <div className="h-full w-full overflow-auto">
+          {renderView()}
+        </div>
+        <TacticalDial onRoleSelect={navigateTo} />
+      </main>
+    </>
   );
 };
 

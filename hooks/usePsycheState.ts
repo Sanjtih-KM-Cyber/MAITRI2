@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { TimeOfDay } from '../types'; 
 
 // Constants for Throttling (Runs face detection 5 times per second: 60 FPS / 12 = 5)
 const FACE_ANALYSIS_THROTTLE_FRAMES = 12; 
@@ -39,8 +38,7 @@ export const usePsycheState = (enabled: boolean = true) => {
             console.log("PsycheState: Media tracks stopped and resources released.");
         }
         
-        // Disposes of the heavy TensorFlow model
-        // FIX: Changed to `dispose()` which is the correct API for TFJS model resource cleanup.
+        // FIX: The correct method to release TensorFlow model resources is `dispose()`, not `reset()`, to prevent memory leaks and correctly clean up the model.
         if (detectorRef.current && detectorRef.current.dispose) {
             detectorRef.current.dispose();
             detectorRef.current = null;

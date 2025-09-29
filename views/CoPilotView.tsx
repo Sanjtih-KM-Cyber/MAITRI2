@@ -2,11 +2,8 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from '../types';
 import ProcedureAssistant from '../components/copilot/ProcedureAssistant';
-import { useSettings } from '../context/SettingsContext';
 import { useMissionData } from '../hooks/useMissionData';
 import CompanionView from './CompanionView';
-import { CO_PILOT_SYSTEM_PROMPT } from '../config/ai_prompts';
-import VoiceVideoFeedback from '../components/common/VoiceVideoFeedback';
 
 interface CoPilotViewProps {
   setView: (view: View) => void;
@@ -14,7 +11,6 @@ interface CoPilotViewProps {
 
 const CoPilotView: React.FC<CoPilotViewProps> = ({ setView }) => {
   const { t } = useTranslation();
-  const { coPilotVoice, setCoPilotVoice } = useSettings();
   const { procedureChecklist, isLoading } = useMissionData();
   const [isChatListening, setIsChatListening] = useState(false);
 
@@ -36,20 +32,8 @@ const CoPilotView: React.FC<CoPilotViewProps> = ({ setView }) => {
         
         <h1 className="text-2xl md:text-3xl font-bold text-primary-text justify-self-center text-center">{t('views.coPilot.title')}</h1>
         
-        <div className="flex items-center space-x-2 justify-self-end">
-            <span className="text-sm font-semibold text-secondary-text hidden lg:inline">{t('coPilot.voice.label')}:</span>
-            <button
-                onClick={() => setCoPilotVoice('female')}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${coPilotVoice === 'female' ? 'bg-primary-accent text-white' : 'bg-widget-background hover:bg-widget-background/50'}`}
-            >
-                {t('coPilot.voice.female')}
-            </button>
-            <button
-                onClick={() => setCoPilotVoice('male')}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${coPilotVoice === 'male' ? 'bg-primary-accent text-white' : 'bg-widget-background hover:bg-widget-background/50'}`}
-            >
-                {t('coPilot.voice.male')}
-            </button>
+        <div className="justify-self-end">
+             {/* Placeholder for potential future controls */}
         </div>
       </header>
       <div className="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-8 overflow-hidden">
@@ -57,10 +41,7 @@ const CoPilotView: React.FC<CoPilotViewProps> = ({ setView }) => {
           <ProcedureAssistant checklist={procedureChecklist} isLoading={isLoading} />
         </div>
         <div className="lg:col-span-1 flex flex-col h-full overflow-hidden">
-           <VoiceVideoFeedback isActive={isChatListening} />
            <CompanionView 
-             persona="coPilot" 
-             systemPrompt={CO_PILOT_SYSTEM_PROMPT} 
              onListeningStateChange={setIsChatListening}
              initialMessage={t('coPilot.initialMessage')}
             />

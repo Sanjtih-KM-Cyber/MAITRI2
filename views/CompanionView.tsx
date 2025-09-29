@@ -5,40 +5,25 @@ import MessageBubble from '../components/chat/MessageBubble';
 import SmartInput from '../components/chat/SmartInput';
 import { getChatResponseStream } from '../services/localAIService';
 import { useSettings } from '../context/SettingsContext';
-import { getChatHistory, saveChatMessage } from '../services/chatPersistenceService';
-// FIX: Import the 'speak' function to enable Text-to-Speech (TTS) for AI responses.
 import { speak } from '../services/voiceService';
 
 interface CompanionViewProps {
   setView?: (view: View) => void;
-  systemPrompt?: string;
   initialMessage?: string;
-  persona: View; // The persona for this chat instance
   onListeningStateChange?: (isListening: boolean) => void;
 }
 
-const CompanionView: React.FC<CompanionViewProps> = ({ setView, systemPrompt, initialMessage, persona, onListeningStateChange }) => {
+const CompanionView: React.FC<CompanionViewProps> = ({ setView, initialMessage, onListeningStateChange }) => {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  // FIX: Destructure 'coPilotVoice' from settings to select the correct voice for TTS.
-  const { isTTSOn, coPilotVoice } = useSettings();
+  const { isTTSOn } = useSettings();
 
   useEffect(() => {
-    const loadHistory = async () => {
-        setIsLoading(true);
-        const history = await getChatHistory(persona);
-        if (history.length > 0) {
-            setMessages(history);
-        } else {
-            const initialText = initialMessage || t('chat.initialMessage');
-            setMessages([{ role: 'model', text: initialText }]);
-        }
-        setIsLoading(false);
-    };
-    loadHistory();
-  }, [persona, initialMessage, t]);
+    const initialText = initialMessage || t('chat.initialMessage');
+    setMessages([{ role: 'model', text: initialText }]);
+  }, [initialMessage, t]);
 
 
   useEffect(() => {
@@ -53,46 +38,35 @@ const CompanionView: React.FC<CompanionViewProps> = ({ setView, systemPrompt, in
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const newUserMessage: Message = { role: 'user', text: inputText, timestamp };
     
-    // Optimistically update UI
     const currentMessages = [...messages, newUserMessage];
     setMessages(currentMessages);
     setIsLoading(true);
 
-    // Persist user message
-    await saveChatMessage(newUserMessage, persona);
-
     const historyForAI = currentMessages.map(({ role, text }) => ({ role, text }));
-    const fullHistory = systemPrompt 
-        ? [{ role: 'system', text: systemPrompt }, ...historyForAI] 
-        : historyForAI;
 
     setMessages(prev => [...prev, { role: 'model', text: '...' }]);
     
     try {
-      const stream = await getChatResponseStream(fullHistory as Message[]);
+      const stream = await getChatResponseStream(historyForAI as Message[]);
       const reader = stream.getReader();
       const decoder = new TextDecoder();
       let isFirstChunk = true;
       let accumulatedText = '';
-      let finalMessage: Message | null = null;
 
       while (true) {
         const { done, value } = await reader.read();
         
         if (done) {
           if (isTTSOn) {
-            // FIX: Call the imported 'speak' function, passing the appropriate voice setting for the Co-Pilot persona.
-            speak(accumulatedText, persona === 'coPilot' ? coPilotVoice : undefined);
+            speak(accumulatedText);
           }
           const finalTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          finalMessage = { role: 'model', text: accumulatedText, timestamp: finalTimestamp };
-
-          // Persist the final model message
-          await saveChatMessage(finalMessage, persona);
+          // FIX: Explicitly type `finalMessage` as `Message` to ensure the `role` property is correctly typed as 'model' instead of the generic 'string'.
+          const finalMessage: Message = { role: 'model', text: accumulatedText, timestamp: finalTimestamp };
 
           setMessages(prev => {
               const lastMessage = prev[prev.length - 1];
-              if(lastMessage?.role === 'model' && finalMessage) {
+              if(lastMessage?.role === 'model') {
                   return [...prev.slice(0, -1), finalMessage]
               }
               return prev;
@@ -117,12 +91,10 @@ const CompanionView: React.FC<CompanionViewProps> = ({ setView, systemPrompt, in
       console.error("Failed to get AI response:", error);
       const errorMessage: Message = { role: 'model', text: t('chat.errorMessage') };
       setMessages(prev => [...prev.slice(0, -1), errorMessage]);
-      await saveChatMessage(errorMessage, persona);
     } finally {
       setIsLoading(false);
     }
-  // FIX: Add 'coPilotVoice' to the dependency array for the 'handleSendMessage' callback.
-  }, [messages, systemPrompt, t, isTTSOn, persona, coPilotVoice]);
+  }, [messages, t, isTTSOn]);
 
 
   return (

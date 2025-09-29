@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { MissionPlan, CadenceItem, MissionChecklist } from '../types';
-import { fetchMissionPlan } from '../services/missionDataService';
+import { useState, useEffect } from 'react';
+import { MissionChecklist, CadenceItem } from '../types';
+import missionPacket from '../data/missionDataPacket.json';
 
 interface MissionData {
-  missionPlan: MissionPlan | null;
   missionCadence: CadenceItem[] | null;
   procedureChecklist: MissionChecklist | null;
   isLoading: boolean;
@@ -11,61 +10,37 @@ interface MissionData {
 }
 
 export const useMissionData = (): MissionData => {
-  const [missionPlan, setMissionPlan] = useState<MissionPlan | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    // Set loading to true only if there's no plan yet
-    if (!missionPlan) setIsLoading(true);
-    try {
-      const plan = await fetchMissionPlan();
-      setMissionPlan(plan);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch mission data');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [missionPlan]);
+  const [data, setData] = useState<Omit<MissionData, 'isLoading'>>({
+      missionCadence: null,
+      procedureChecklist: null,
+      error: null,
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initial fetch
-    fetchData();
+    // Simulate async loading of static data
+    setTimeout(() => {
+      try {
+        const cadence: CadenceItem[] = missionPacket.details.cadence;
+        const checklist: MissionChecklist = missionPacket.details.checklist;
 
-    // Set up event listener for real-time local updates
-    const handleUpdate = () => {
-      console.log('Local mission data update detected, refetching...');
-      fetchData();
-    };
+        setData({
+          procedureChecklist: checklist,
+          missionCadence: cadence,
+          error: null,
+        });
+      } catch (e) {
+        setData({
+          procedureChecklist: null,
+          missionCadence: null,
+          error: 'Failed to load static mission data.',
+        });
+        console.error("Failed to parse mission packet data:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500); // simulate network delay
+  }, []);
 
-    window.addEventListener('missionDataUpdated', handleUpdate);
-
-    // Cleanup listener on unmount
-    return () => {
-      window.removeEventListener('missionDataUpdated', handleUpdate);
-    };
-  }, [fetchData]);
-
-  const parsedData = useMemo(() => {
-    if (!missionPlan || !missionPlan.packetData) {
-      return { missionCadence: null, procedureChecklist: null };
-    }
-    try {
-      const packet = JSON.parse(missionPlan.packetData);
-      const missionCadence = packet.details?.cadence || null;
-      const procedureChecklist = packet.details?.checklist || null;
-      return { missionCadence, procedureChecklist };
-    } catch (e) {
-      console.error("Failed to parse mission packet data:", e);
-      setError("Error parsing mission data packet.");
-      return { missionCadence: null, procedureChecklist: null };
-    }
-  }, [missionPlan]);
-
-  return {
-    missionPlan,
-    ...parsedData,
-    isLoading,
-    error,
-  };
+  return { ...data, isLoading };
 };

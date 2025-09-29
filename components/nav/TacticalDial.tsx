@@ -87,7 +87,7 @@ const TacticalDial: React.FC<{ onRoleSelect: (view: View) => void }> = ({ onRole
         if (longPressTimerRef.current) {
             clearTimeout(longPressTimerRef.current);
         }
-        // FIX: Pass the event `e` to the drag handlers to fix the "Expected 1 arguments, but got 0" error.
+        // FIX: Pass the event object `e` to the dragHandlers `onTouchEnd` and `onMouseUp` methods to match their expected signature from the useDraggable hook.
         ('touches' in e) ? dragHandlers.onTouchEnd(e) : dragHandlers.onMouseUp(e);
         if (!isMovedRef.current && !isOpen) { // Also check if it's not already open to prevent toggle on drag
             // A simple click without a long press. Could be used for a default action.
