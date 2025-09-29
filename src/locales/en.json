@@ -1,0 +1,150 @@
+{
+  "dashboard": {
+    "title": "Habitat Dashboard",
+    "subtitle": "System status and crew support at a glance.",
+    "theme": {
+      "earthrise": "Set theme to Earthrise Blue",
+      "warning": "Set theme to Warning Red",
+      "nominal": "Set theme to Nominal Green"
+    },
+    "language": {
+        "en": "English",
+        "hi": "हिंदी"
+    },
+    "tts": {
+        "label": "TTS Output"
+    },
+    "voice": {
+        "label": "TTS Voice",
+        "female": "Female",
+        "male": "Male"
+    }
+  },
+  "widgets": {
+    "companion": {
+      "title": "Talk to MAITRI",
+      "subtitle": "Tap to open chat and mission support"
+    },
+    "psycheState": {
+      "title": "Psyche State",
+      "calm": "Calm"
+    },
+    "missionCadence": {
+      "title": "Mission Cadence"
+    },
+    "earthLink": {
+      "title": "Earth Link",
+      "uplinkActive": "Uplink Active"
+    },
+    "systemStatus": {
+        "title": "System Status",
+        "nominal": "All systems nominal."
+    },
+    "powerLevels": {
+        "title": "Power Levels",
+        "levels": "Solar: 92% | Battery: 98%"
+    }
+  },
+  "chat": {
+    "title": "MAITRI",
+    "initialMessage": "Hello! I'm MAITRI. How can I assist you with your mission today?",
+    "inputPlaceholder": "Chat with MAITRI...",
+    "inputPlaceholderLoading": "MAITRI is responding...",
+    "sendMessage": "Send message",
+    "errorMessage": "Sorry, I encountered an error.",
+    "listening": "Listening...",
+    "startListening": "Start listening",
+    "stopListening": "Stop listening"
+  },
+  "common": {
+      "dashboard": "Dashboard",
+      "backToDashboard": "Back to Dashboard",
+      "error": "Error: {{message}}",
+      "loading": "Loading..."
+  },
+  "views": {
+      "guardian": {
+          "title": "Guardian",
+          "sensorsInitializing": "Initializing sensors...",
+          "psycheStateMatrix": "Psyche-State Matrix",
+          "stressLevel": "Visual Stress",
+          "fatigueLevel": "Vocal Fatigue"
+      },
+      "coPilot": {
+          "title": "Co-Pilot"
+      },
+      "storyteller": {
+          "title": "Storyteller"
+      },
+      "playmate": {
+          "title": "Playmate"
+      }
+  },
+  "guardian": {
+      "massProtocol": {
+          "title": "M.A.S.S. Protocol",
+          "complete": "{{percentage}}% Complete"
+      },
+      "symptomLogger": {
+          "title": "Symptom Logger",
+          "placeholder": "Describe any physical or psychological symptoms...",
+          "dictate": "Dictate",
+          "listening": "Listening...",
+          "logSymptom": "Log Symptom"
+      },
+      "simulation": {
+          "title": "Simulation Controls",
+          "stress": "Simulated Visual Stress",
+          "fatigue": "Simulated Vocal Fatigue"
+      }
+  },
+  "coPilot": {
+      "initialMessage": "Co-Pilot ready. How can I assist with the mission?",
+      "procedureAssistant": {
+          "loading": "Loading Procedure...",
+          "noData": "No procedure data available.",
+          "error": "Failed to load procedure. Please try again later.",
+          "step": "Step {{current}} of {{total}}",
+          "listening": "Listening for \"Confirm\"...",
+          "confirmNext": "Confirm & Next",
+          "procedureComplete": "Procedure Complete",
+          "reset": "Reset"
+      }
+  },
+  "storyteller": {
+      "digitalDiary": {
+          "title": "Personal Log",
+          "placeholder": "Record your thoughts, observations, or a message for home...",
+          "dictate": "Dictate",
+          "listening": "Listening...",
+          "recordLog": "Record Log",
+          "stopRecording": "Stop Recording",
+          "generateLegacyLog": "Generate Legacy Log",
+          "generating": "Generating...",
+          "createEarthLink": "Create Earth Link Message",
+          "summarizing": "Summarizing...",
+          "videoError": "Could not access camera and microphone. Please ensure permissions are granted."
+      },
+      "sanctuary": {
+          "title": "Activate Sensory Immersion",
+          "prompt": "Describe a calming memory. MAITRI will generate an ambient soundscape and lighting theme to help you relax.",
+          "activate": "Activate Sanctuary",
+          "deactivate": "Deactivate Sanctuary"
+      }
+  },
+  "playmate": {
+      "initialMessage": "Welcome to Cosmic Chronicles. You are aboard the starship 'Odyssey', charting the unknown Nebulon-9 sector. A strange, rhythmic energy pulse appears on long-range sensors, originating from a lone, uncharted moon. Do you: 1. Adjust course to investigate the moon? 2. Run a deep-space spectral analysis of the pulse from your current position? 3. Ignore it and continue on your primary mission?"
+  },
+  "dial": {
+      "open": "Open navigation dial",
+      "guardian": "Guardian",
+      "coPilot": "Co-Pilot",
+      "storyteller": "Storyteller",
+      "playmate": "Playmate"
+  },
+  "services": {
+      "localAI": {
+          "connectionError": "Error: Could not connect to MAITRI's core service. Please ensure the local server is running."
+      }
+  }
+}

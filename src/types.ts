@@ -2,24 +2,25 @@
 
 export type View = 'dashboard' | 'chat' | 'guardian' | 'coPilot' | 'storyteller' | 'playmate';
 
-export type ChatRole = 'Guardian' | 'CoPilot' | 'Storyteller' | 'Playmate'; // New Role Type
+export type ChatRole = 'Guardian' | 'CoPilot' | 'Storyteller' | 'Playmate';
 
 export interface ThemeContextType {
   accentColor: string;
   changeAccentColor: (newColor: string) => void;
+  setSanctuaryActive: (isActive: boolean) => void;
 }
 
-export interface PsycheState { // Expanded PsycheState Interface
-    visualStressScore: number;     // 0-10, from facial tension
-    vocalFatigueScore: number;     // 0-10, from vocal analysis
-    combinedWellnessScore: number; // 0-10, the final actionable score
+export interface PsycheState {
+    visualStressScore: number;
+    vocalFatigueScore: number;
+    combinedWellnessScore: number;
     isCameraActive: boolean;
     isMicActive: boolean;
     status: 'idle' | 'initializing' | 'running' | 'error';
     error: string | null;
 }
 
-export interface AppStateContextType { // Global State for MAITRI
+export interface AppStateContextType {
     activeRole: ChatRole;
     setActiveRole: (role: ChatRole) => void;
     wellness: PsycheState;

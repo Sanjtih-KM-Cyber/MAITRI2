@@ -1,22 +1,27 @@
-// src/context/ThemeContext.tsx (MODIFIED FOR ADAPTIVE THEME)
+// src/context/ThemeContext.tsx
 
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo, useEffect } from 'react';
 import { ThemeContextType } from '../types';
-import { useAppState } from './AppStateContext'; // Import the global state
+import { useAppState } from './AppStateContext';
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+interface ExtendedThemeContextType extends ThemeContextType {
+    setSanctuaryActive: (isActive: boolean) => void;
+}
+
+const ThemeContext = createContext<ExtendedThemeContextType | undefined>(undefined);
 
 const defaultAccentColor = '#4A90E2'; // 'Earthrise' blue
 const CALMING_COLOR = '#388E3C';    // A deep, calming green for high stress
+const EVENING_COLOR = '#D2691E';    // A warmer (Cochineal) color for evening
+const SANCTUARY_COLOR = '#8E44AD'; // A unique, deep purple for sanctuary mode
 
 const hexToRgba = (hex: string, alpha: number): string => {
-    // Existing helper function for color conversion
     const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
     hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
 
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     if (!result) {
-        return `rgba(74, 144, 226, ${alpha})`; // fallback to default blue
+        return `rgba(74, 144, 226, ${alpha})`;
     }
     const r = parseInt(result[1], 16);
     const g = parseInt(result[2], 16);
@@ -26,12 +31,13 @@ const hexToRgba = (hex: string, alpha: number): string => {
 
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { wellness } = useAppState(); // Get the combined wellness score (0-10)
+  const { wellness } = useAppState();
   const [accentColor, setAccentColor] = useState<string>(defaultAccentColor);
   const [userSelectedColor, setUserSelectedColor] = useState<string>(defaultAccentColor);
   const [isBioOverrideActive, setIsBioOverrideActive] = useState(false);
+  const [hasUserMadeSelection, setHasUserMadeSelection] = useState(false);
+  const [isSanctuaryActive, setSanctuaryActive] = useState(false); // NEW for Sensory Immersion
 
-  // 1. MANUAL/ORIGINAL ACCENT COLOR LOGIC
   const applyAccentColor = useCallback((color: string) => {
     setAccentColor(color);
     document.documentElement.style.setProperty('--primary-accent-color', color);
@@ -44,54 +50,54 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       console.error("Invalid hex color format provided to changeAccentColor:", newColor);
       return;
     }
-    // Disable bio-override when the user manually changes the color
     setUserSelectedColor(newColor);
+    setHasUserMadeSelection(true);
     setIsBioOverrideActive(false); 
     applyAccentColor(newColor);
   }, [applyAccentColor]);
 
 
-  // 2. BIO-ADAPTIVE & CIRCADIAN THEME LOGIC
   useEffect(() => {
     const score = wellness.combinedWellnessScore;
 
-    // --- BIO-ADAPTIVE THEME (4.3) ---
+    // --- PRIORITY 1: SENSORY IMMERSION (SANCTUARY) ---
+    if (isSanctuaryActive) {
+        if (accentColor !== SANCTUARY_COLOR) {
+            applyAccentColor(SANCTUARY_COLOR);
+        }
+        return;
+    }
+
+    // --- PRIORITY 2: BIO-ADAPTIVE THEME ---
     if (score >= 7.5 && !isBioOverrideActive) {
-      // High Stress detected: Activate calming mode
       setIsBioOverrideActive(true);
       applyAccentColor(CALMING_COLOR);
       return;
     } 
     
     if (isBioOverrideActive && score < 6.0) {
-      // Stress relieved: Revert to the user's chosen color
       setIsBioOverrideActive(false);
-      applyAccentColor(userSelectedColor); 
+    } else if (isBioOverrideActive) {
       return;
     }
     
-    // If bio override is active, no other theme logic should run.
-    if (isBioOverrideActive) return;
+    // --- PRIORITY 3 & 4: USER SELECTION OR CIRCADIAN THEME ---
+    let targetColor: string;
 
-    // --- CIRCADIAN THEME (4.4) - Soft transition on base color only ---
-    const currentHour = new Date().getHours();
-    let baseColor = defaultAccentColor;
-
-    if (currentHour >= 18 || currentHour < 6) {
-        // Night/Evening: Use a warmer, dim tone for eye comfort
-        baseColor = '#D2691E'; // Simulating a warmer (Cochineal) color
+    if (hasUserMadeSelection) {
+        targetColor = userSelectedColor;
+    } else {
+        const currentHour = new Date().getHours();
+        targetColor = (currentHour >= 18 || currentHour < 6) ? EVENING_COLOR : defaultAccentColor;
     }
     
-    // Only update if the user hasn't manually selected a color that is different from the circadian suggestion
-    if (userSelectedColor === defaultAccentColor && accentColor !== baseColor) {
-        applyAccentColor(baseColor);
-    } else if (userSelectedColor !== defaultAccentColor && accentColor !== userSelectedColor) {
-        applyAccentColor(userSelectedColor);
+    if (accentColor !== targetColor) {
+        applyAccentColor(targetColor);
     }
     
-  }, [wellness.combinedWellnessScore, isBioOverrideActive, applyAccentColor, accentColor, userSelectedColor]);
+  }, [wellness.combinedWellnessScore, isBioOverrideActive, applyAccentColor, accentColor, userSelectedColor, hasUserMadeSelection, isSanctuaryActive]);
   
-  const value = useMemo(() => ({ accentColor, changeAccentColor }), [accentColor, changeAccentColor]);
+  const value = useMemo(() => ({ accentColor, changeAccentColor, setSanctuaryActive }), [accentColor, changeAccentColor]);
 
   return (
     <ThemeContext.Provider value={value}>
@@ -100,7 +106,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   );
 };
 
-export const useTheme = (): ThemeContextType => {
+export const useTheme = (): ExtendedThemeContextType => {
   const context = useContext(ThemeContext);
   if (context === undefined) {
     throw new Error('useTheme must be used within a ThemeProvider');

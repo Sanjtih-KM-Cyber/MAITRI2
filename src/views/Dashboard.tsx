@@ -1,10 +1,10 @@
-// src/views/Dashboard.tsx (MODIFIED)
+// src/views/Dashboard.tsx
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, ChatRole } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
-import { useAppState } from '../context/AppStateContext'; // NEW IMPORT
+import { useAppState } from '../context/AppStateContext';
 import CompanionWidget from '../components/dashboard/widgets/CompanionWidget';
 import PsycheStateRing from '../components/dashboard/widgets/PsycheStateRing';
 import MissionCadence from '../components/dashboard/widgets/MissionCadence';
@@ -25,10 +25,9 @@ const GlassWidget: React.FC<{ children: React.ReactNode; className?: string; }> 
 const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   const { changeAccentColor } = useTheme();
   const { t, i18n } = useTranslation();
-  const { isTTSOn, toggleTTS } = useSettings();
-  const { activeRole, setActiveRole, wellness } = useAppState(); // NEW: Access global state
+  const { isTTSOn, toggleTTS, coPilotVoice, setCoPilotVoice } = useSettings();
+  const { activeRole, setActiveRole } = useAppState();
 
-  // Map view to friendly role name for display
   const roleNameMap: Record<ChatRole, string> = {
     Guardian: t('dial.guardian'),
     CoPilot: t('dial.coPilot'),
@@ -37,8 +36,6 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   };
   const currentRoleName = roleNameMap[activeRole];
 
-
-  // Helper for Adaptive Habitat (4.2)
   const handleRoleChange = (role: ChatRole, view: View) => {
     setActiveRole(role);
     setView(view);
@@ -49,23 +46,16 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       <header className="mb-8 flex-shrink-0">
         <h1 className="text-4xl font-bold text-primary-text">{t('dashboard.title')}</h1>
         <p className="text-secondary-text text-lg">{t('dashboard.subtitle')}</p>
-        <div className="flex items-center space-x-4 mt-4">
+        <div className="flex items-center space-x-4 mt-4 flex-wrap gap-y-2">
           
-          {/* Mission Palettes (4.2) - Interface Restoration */}
           <button aria-label={t('dashboard.theme.earthrise')} onClick={() => changeAccentColor('#4A90E2')} className="w-6 h-6 rounded-full bg-[#4A90E2] border-2 border-white/50 focus:outline-none focus:ring-2 focus:ring-white"></button>
           <button aria-label={t('dashboard.theme.warning')} onClick={() => changeAccentColor('#E24A4A')} className="w-6 h-6 rounded-full bg-[#E24A4A] border-2 border-white/50 focus:outline-none focus:ring-2 focus:ring-white"></button>
           <button aria-label={t('dashboard.theme.nominal')} onClick={() => changeAccentColor('#4AE28A')} className="w-6 h-6 rounded-full bg-[#4AE28A] border-2 border-white/50 focus:outline-none focus:ring-2 focus:ring-white"></button>
           
           <div className="border-l border-widget-border h-6"></div>
-
-          {/* Current Role Indicator */}
-          <div className="text-sm font-semibold text-primary-accent">
-            MAITRI Role: {currentRoleName}
-          </div>
-
+          <div className="text-sm font-semibold text-primary-accent">MAITRI Role: {currentRoleName}</div>
           <div className="border-l border-widget-border h-6"></div>
 
-          {/* TTS and Language Controls (5.1) */}
           <div className="flex items-center space-x-2">
             <span className="text-sm text-secondary-text">{t('dashboard.tts.label')}</span>
             <button
@@ -77,6 +67,14 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
               <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${isTTSOn ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
+          
+          {/* NEW: Voice Gender Selection */}
+          <div className="border-l border-widget-border h-6"></div>
+           <div className="flex items-center space-x-2">
+            <span className="text-sm text-secondary-text">{t('dashboard.voice.label')}</span>
+            <button onClick={() => setCoPilotVoice('female')} className={`px-3 py-1 text-sm rounded-md ${coPilotVoice === 'female' ? 'bg-primary-accent text-white' : 'bg-widget-background'}`}>{t('dashboard.voice.female')}</button>
+            <button onClick={() => setCoPilotVoice('male')} className={`px-3 py-1 text-sm rounded-md ${coPilotVoice === 'male' ? 'bg-primary-accent text-white' : 'bg-widget-background'}`}>{t('dashboard.voice.male')}</button>
+          </div>
 
           <div className="border-l border-widget-border h-6"></div>
 
@@ -86,16 +84,11 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       </header>
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 flex-grow overflow-y-auto pb-8">
         
-        {/* Companion Widget (Goes to Chat/Playmate) */}
         <CompanionWidget onClick={() => handleRoleChange('Guardian', 'chat')} className="md:col-span-2 lg:col-span-2" />
-        
-        {/* Psyche-State Ring (Updated to show real data) */}
         <PsycheStateRing/>
-        
         <MissionCadence />
         <EarthLink />
         
-        {/* RADIATION FORECASTER (3.2.2) */}
         <GlassWidget className="lg:col-span-2">
             <h3 className="font-semibold text-primary-text">{t('widgets.systemStatus.title')}</h3>
             <p className="text-secondary-text">{t('widgets.systemStatus.nominal')}</p>

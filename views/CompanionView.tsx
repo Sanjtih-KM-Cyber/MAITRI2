@@ -1,29 +1,40 @@
+// src/views/CompanionView.tsx (MODIFIED for Ollama/Adaptive Tonality)
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Message } from '../types';
 import MessageBubble from '../components/chat/MessageBubble';
 import SmartInput from '../components/chat/SmartInput';
-import { getChatResponseStream } from '../services/localAIService';
+import { runMAITRI } from '../services/localAIService'; // NEW: Use new Ollama service
 import { useSettings } from '../context/SettingsContext';
 import { speak } from '../services/voiceService';
+import { useAppState } from '../context/AppStateContext'; // NEW: Get role/wellness
 
 interface CompanionViewProps {
   setView?: (view: View) => void;
   initialMessage?: string;
   onListeningStateChange?: (isListening: boolean) => void;
+  isPlaymate?: boolean; // NEW: Flag to know if we are in the Playmate view
 }
 
-const CompanionView: React.FC<CompanionViewProps> = ({ setView, initialMessage, onListeningStateChange }) => {
+const CompanionView: React.FC<CompanionViewProps> = ({ setView, initialMessage, onListeningStateChange, isPlaymate = false }) => {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { isTTSOn } = useSettings();
+  const { isTTSOn, coPilotVoice } = useSettings();
+  const { activeRole, wellness } = useAppState(); // Get the current active role and wellness score
+
+  // Set the correct initial message based on the role
+  const initialText = isPlaymate 
+    ? t('playmate.initialMessage') 
+    : (initialMessage || t('chat.initialMessage'));
 
   useEffect(() => {
-    const initialText = initialMessage || t('chat.initialMessage');
-    setMessages([{ role: 'model', text: initialText }]);
-  }, [initialMessage, t]);
+    // Only set the initial message if the list is empty
+    if(messages.length === 0) {
+        setMessages([{ role: 'model', text: initialText }]);
+    }
+  }, [initialText, messages.length]); 
 
 
   useEffect(() => {
@@ -38,63 +49,50 @@ const CompanionView: React.FC<CompanionViewProps> = ({ setView, initialMessage, 
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const newUserMessage: Message = { role: 'user', text: inputText, timestamp };
     
+    // Use the role set by the TacticalDial or App.tsx (Guardian, CoPilot, etc.)
+    const currentRole = isPlaymate ? 'Playmate' : activeRole; 
+    
     const currentMessages = [...messages, newUserMessage];
     setMessages(currentMessages);
     setIsLoading(true);
-
-    const historyForAI = currentMessages.map(({ role, text }) => ({ role, text }));
-
-    setMessages(prev => [...prev, { role: 'model', text: '...' }]);
     
     try {
-      const stream = await getChatResponseStream(historyForAI as Message[]);
-      const reader = stream.getReader();
-      const decoder = new TextDecoder();
-      let isFirstChunk = true;
-      let accumulatedText = '';
+      // Prepare history for AI
+      const historyForAI = currentMessages.filter(m => m.role !== 'system');
+      
+      // Add a temporary loading message
+      setMessages(prev => [...prev, { role: 'model', text: '...' }]);
+      
+      // Call the new runMAITRI service with the current wellness score
+      const aiResponse = await runMAITRI(
+        currentRole, 
+        historyForAI, 
+        inputText, 
+        wellness.combinedWellnessScore // Pass the score for Adaptive Tonality
+      );
 
-      while (true) {
-        const { done, value } = await reader.read();
-        
-        if (done) {
-          if (isTTSOn) {
-            speak(accumulatedText);
-          }
-          const finalTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          // FIX: Explicitly type `finalMessage` as `Message` to ensure the `role` property is correctly typed as 'model' instead of the generic 'string'.
-          const finalMessage: Message = { role: 'model', text: accumulatedText, timestamp: finalTimestamp };
+      const finalTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const finalMessage: Message = { role: 'model', text: aiResponse, timestamp: finalTimestamp };
 
-          setMessages(prev => {
-              const lastMessage = prev[prev.length - 1];
-              if(lastMessage?.role === 'model') {
-                  return [...prev.slice(0, -1), finalMessage]
-              }
-              return prev;
-          });
-          break;
-        }
-        
-        const chunkText = decoder.decode(value);
-        accumulatedText += chunkText;
+      setMessages(prev => {
+          // Replace the '...' loading message with the final response
+          return [...prev.slice(0, -1), finalMessage];
+      });
 
-        setMessages(prev => {
-          const lastMessage = prev[prev.length - 1];
-          if (lastMessage?.role === 'model') {
-            const newText = isFirstChunk ? chunkText : lastMessage.text + chunkText;
-            isFirstChunk = false;
-            return [...prev.slice(0, -1), { ...lastMessage, text: newText.replace('...', '') }];
-          }
-          return prev;
-        });
+      // 1. Multilingual Voice I/O (5.1)
+      if (isTTSOn) {
+        // Use the Co-Pilot voice setting for MAITRI's output gender
+        speak(aiResponse, coPilotVoice); 
       }
+      
     } catch (error) {
       console.error("Failed to get AI response:", error);
-      const errorMessage: Message = { role: 'model', text: t('chat.errorMessage') };
+      const errorMessage: Message = { role: 'model', text: t('services.localAI.connectionError') };
       setMessages(prev => [...prev.slice(0, -1), errorMessage]);
     } finally {
       setIsLoading(false);
     }
-  }, [messages, t, isTTSOn]);
+  }, [messages, t, isTTSOn, coPilotVoice, activeRole, wellness.combinedWellnessScore, isPlaymate]);
 
 
   return (
@@ -111,7 +109,7 @@ const CompanionView: React.FC<CompanionViewProps> = ({ setView, initialMessage, 
               </svg>
               <span className="text-lg font-medium hidden md:block">{t('common.dashboard')}</span>
             </button>
-            <h1 className="text-xl md:text-2xl font-bold text-primary-text mx-auto pr-16 md:pr-24">{t('chat.title')}</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-primary-text mx-auto pr-16 md:pr-24">{t('chat.title')} ({isPlaymate ? t('dial.playmate') : activeRole})</h1>
         </header>
        )}
 

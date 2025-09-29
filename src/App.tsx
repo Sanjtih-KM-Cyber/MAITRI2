@@ -10,41 +10,47 @@ import TacticalDial from './components/nav/TacticalDial';
 import { View, ChatRole } from './types';
 import { startListening } from './services/voiceService';
 import { parseCommand } from './services/commandService';
-import { useAppState } from './context/AppStateContext'; // NEW
+import { useAppState } from './context/AppStateContext';
 
 // The main application content component (uses context)
 const AppContent: React.FC = () => {
     const [currentView, setCurrentView] = useState<View>('dashboard');
+    const [viewOptions, setViewOptions] = useState<any>({});
+    const [isDialOpen, setIsDialOpen] = useState(false);
     const { setActiveRole } = useAppState();
 
-    // Use a custom function to navigate and set the role context
-    const navigateTo = useCallback((view: View) => {
+    const navigateTo = useCallback((view: View, options: any = {}) => {
         setCurrentView(view);
-        // Map navigation to the appropriate role for chat context
+        setViewOptions(options);
+
         if (view !== 'dashboard' && view !== 'chat') {
             setActiveRole(view.charAt(0).toUpperCase() + view.slice(1) as ChatRole);
         } else if (view === 'chat') {
-            // Default chat view should be Guardian
-            setActiveRole('Guardian');
+            setActiveRole('Guardian'); // Default chat is Guardian
         }
     }, [setActiveRole]);
 
     useEffect(() => {
-        // Logic for hotword voice command: "Hey MAITRI, go to [View]"
         const handleVoiceResult = (transcript: string) => {
             const lower = transcript.toLowerCase();
             if (lower.includes('hey maitri')) {
                 const commandPhrase = lower.substring(lower.indexOf('hey maitri') + 'hey maitri'.length).trim();
                 if (commandPhrase) {
-                    const view = parseCommand(commandPhrase);
-                    if (view) {
-                        navigateTo(view);
+                    const command = parseCommand(commandPhrase);
+                    if (command) {
+                        switch (command.type) {
+                            case 'NAVIGATE':
+                                navigateTo(command.payload);
+                                break;
+                            case 'DIAL':
+                                setIsDialOpen(command.payload === 'open');
+                                break;
+                        }
                     }
                 }
             }
         };
 
-        // Continuous listening for the global command parser
         const stopListening = startListening(handleVoiceResult, () => {}, { continuous: true });
         
         return stopListening;
@@ -56,9 +62,8 @@ const AppContent: React.FC = () => {
             case 'dashboard':
                 return <Dashboard setView={navigateTo} />;
             case 'chat':
-                 return <CompanionView setView={navigateTo} />;
+                 return <CompanionView setView={navigateTo} initialMessage={viewOptions.initialMessage} />;
             case 'playmate':
-                // Playmate uses the CompanionView but sets the Playmate role in context
                 return <CompanionView setView={navigateTo} isPlaymate={true} />;
             case 'guardian':
                 return <GuardianView setView={navigateTo} />;
@@ -77,14 +82,16 @@ const AppContent: React.FC = () => {
                 <div className="h-full w-full overflow-auto">
                     {renderView()}
                 </div>
-                <TacticalDial onRoleSelect={navigateTo} />
+                <TacticalDial 
+                    onRoleSelect={navigateTo} 
+                    isOpen={isDialOpen} 
+                    setIsOpen={setIsDialOpen} 
+                />
             </main>
         </>
     );
 };
 
-// Wrapper component to provide the theme and app state
-// FIX: Removed redundant AppStateProvider wrapper, as it's already in index.tsx
 const App: React.FC = () => (
     <AppContent />
 );

@@ -2,7 +2,6 @@ import React, { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startListening } from '../../services/voiceService';
 import { summarizeText, generateNarrative } from '../../services/localAIService';
-// FIX: Import useAppState to get the wellness score for AI service calls.
 import { useAppState } from '../../context/AppStateContext';
 
 const DigitalDiary: React.FC = () => {
@@ -11,6 +10,7 @@ const DigitalDiary: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const stopListeningRef = useRef<(() => void) | null>(null);
+  // FIX: Import and use AppState to get the wellness score needed by AI services.
   const { wellness } = useAppState();
 
   const handleDictate = useCallback(() => {
@@ -33,7 +33,7 @@ const DigitalDiary: React.FC = () => {
     if (!entry.trim() || isProcessing) return;
     setIsProcessing(true);
     try {
-        // FIX: Pass the wellness score to the generateNarrative function.
+        // FIX: Pass the required wellnessScore argument to the generateNarrative function.
         const narrative = await generateNarrative(entry, wellness.combinedWellnessScore);
         setEntry(prev => `${prev}\n\n--- MAITRI Generated Log ---\n${narrative}`);
     } catch(e) {
@@ -47,7 +47,7 @@ const DigitalDiary: React.FC = () => {
      if (!entry.trim() || isProcessing) return;
      setIsProcessing(true);
      try {
-        // FIX: Pass the wellness score to the summarizeText function.
+        // FIX: Pass the required wellnessScore argument to the summarizeText function.
         const summary = await summarizeText(entry, wellness.combinedWellnessScore);
         alert(`Earth Link Message Draft:\n\n"${summary}"\n\n(This would be sent to the comms panel)`);
      } catch(e) {

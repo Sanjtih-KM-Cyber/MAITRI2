@@ -11,6 +11,16 @@ const MAITRI_SYSTEM_PROMPTS = {
     Playmate: "You are MAITRI, a lively and humorous Game Master. Your tone is enthusiastic and improvisational. Your primary function is to advance collaborative sci-fi adventure games and combat boredom. Keep responses engaging and slightly mysterious.",
 };
 
+const CO_PILOT_CADENCE_PROMPT = `You are MAITRI, a precise, efficient, and authoritative Mission Co-Pilot. Your tone must be professional, brief, and procedural. If the user asks to add, schedule, or create a new task for the mission cadence, you MUST FIRST respond with a single line of JSON, followed by your conversational confirmation on a NEW line. The JSON format is:
+JSON:{"task": {"time": "HH:MM", "title": "Task Description"}}
+Example user request: "Hey MAITRI, add a geological survey for 2pm"
+Example response:
+JSON:{"task": {"time": "14:00", "title": "Geological Survey"}}
+Acknowledged. I have added "Geological Survey" to the schedule for 14:00.
+
+If the user is NOT asking to add a task, just respond normally without any JSON.`;
+
+
 // --- ADAPTIVE TONALITY LOGIC ---
 const getAdaptivePrompt = (role: string, wellnessScore: number) => {
     let prompt = MAITRI_SYSTEM_PROMPTS[role as keyof typeof MAITRI_SYSTEM_PROMPTS] || MAITRI_SYSTEM_PROMPTS.Guardian;
@@ -63,6 +73,45 @@ export const runMAITRI = async (role: string, history: Message[], newPrompt: str
         // Return a readable stream with a specific error to be handled by CompanionView
         const errorBody = await response.json().catch(() => ({ error: 'Server responded with error status.' }));
         throw new Error(`AI Service Error (${response.status}): ${errorBody.error || 'Check local Ollama server log.'}`);
+    }
+
+    const data = await response.json();
+    return data.message.content || i18n.t('chat.errorMessage');
+
+  } catch (error) {
+    console.error("Local AI service connection error:", error);
+    return i18n.t('services.localAI.connectionError');
+  }
+};
+
+/**
+ * Specialized function for Co-Pilot view to handle cadence updates.
+ */
+export const runCoPilotMAITRI = async (history: Message[], newPrompt: string, wellnessScore: number): Promise<string> => {
+  // Use a specialized prompt for CoPilot that can handle task parsing
+  const systemPrompt = CO_PILOT_CADENCE_PROMPT;
+  const API_ENDPOINT = 'http://localhost:11434/api/chat';
+
+  const messagesForAI = [
+    { role: 'system', content: systemPrompt },
+    ...history.map(msg => ({ role: msg.role === 'model' ? 'assistant' : 'user', content: msg.text })),
+    { role: 'user', content: newPrompt },
+  ];
+
+  try {
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'llama3',
+        messages: messagesForAI,
+        stream: false,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({ error: 'Server responded with error status.' }));
+      throw new Error(`AI Service Error (${response.status}): ${errorBody.error || 'Check local Ollama server log.'}`);
     }
 
     const data = await response.json();

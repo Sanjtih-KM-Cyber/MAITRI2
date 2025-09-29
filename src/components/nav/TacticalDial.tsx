@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDraggable } from '../../hooks/useDraggable';
 import { View } from '../../types';
@@ -43,9 +43,15 @@ const getRoles = (t: (key: string) => string) => [
     { id: 'playmate', name: t('dial.playmate'), icon: <PlaymateIcon />, angle: -30 },
 ] as const;
 
-const TacticalDial: React.FC<{ onRoleSelect: (view: View) => void }> = ({ onRoleSelect }) => {
+// FIX: Update props to accept isOpen and setIsOpen from parent for external control.
+interface TacticalDialProps {
+  onRoleSelect: (view: View) => void;
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const TacticalDial: React.FC<TacticalDialProps> = ({ onRoleSelect, isOpen, setIsOpen }) => {
     const { position, dragHandlers } = useDraggable();
-    const [isOpen, setIsOpen] = useState(false);
     const { t } = useTranslation();
     const roles = getRoles(t);
 
@@ -66,7 +72,7 @@ const TacticalDial: React.FC<{ onRoleSelect: (view: View) => void }> = ({ onRole
                 setIsOpen(true);
             }
         }, 300);
-    }, [dragHandlers]);
+    }, [dragHandlers, setIsOpen]);
 
     const handlePressMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         if (longPressTimerRef.current) {
