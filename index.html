@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MAITRI - AI Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- TensorFlow.js and Face Landmark Detection Model -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
+
+    <style>
+      :root {
+        --font-sans: 'Inter', system-ui, sans-serif;
+        --background-color: #0A0A1A;
+        --primary-text-color: #EAEAEA;
+        --secondary-text-color: #888899;
+        --primary-accent-color: #4A90E2; /* Default 'Earthrise' blue */
+        --widget-background-color: rgba(20, 20, 40, 0.7);
+        --widget-border-color: rgba(74, 144, 226, 0.3);
+        --glow-color: rgba(74, 144, 226, 0.5);
+      }
+      body {
+        background-color: var(--background-color);
+        color: var(--primary-text-color);
+        font-family: var(--font-sans);
+        margin: 0;
+        overflow: hidden;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.98); }
+        to { opacity: 1; transform: scale(1); }
+      }
+      @keyframes pulse-glow {
+        0%, 100% {
+          filter: drop-shadow(0 0 5px var(--glow-color));
+          opacity: 0.8;
+        }
+        50% {
+          filter: drop-shadow(0 0 15px var(--glow-color));
+          opacity: 1;
+        }
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
+            colors: {
+              'background': 'var(--background-color)',
+              'primary-text': 'var(--primary-text-color)',
+              'secondary-text': 'var(--secondary-text-color)',
+              'primary-accent': 'var(--primary-accent-color)',
+              'widget-background': 'var(--widget-background-color)',
+              'widget-border': 'var(--widget-border-color)',
+            },
+            boxShadow: {
+              'glow': '0 0 20px 0 var(--glow-color)',
+            },
+            animation: {
+              'fadeIn': 'fadeIn 0.5s ease-in-out',
+              'pulse-glow': 'pulse-glow 3s infinite ease-in-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: 0, transform: 'scale(0.98)' },
+                '100%': { opacity: 1, transform: 'scale(1)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "react-i18next": "https://aistudiocdn.com/react-i18next@^16.0.0",
+    "i18next": "https://aistudiocdn.com/i18next@^25.5.2",
+    "i18next-http-backend": "https://aistudiocdn.com/i18next-http-backend@^3.0.2"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

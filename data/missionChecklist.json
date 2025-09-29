@@ -1,0 +1,36 @@
+{
+  "title": "EVA Pre-Breathe Protocol",
+  "procedureID": "EVA-004B",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Don EMU Suit",
+      "instruction": "Don the Extravehicular Mobility Unit. Verify all seals and connections are secure. Report suit pressure."
+    },
+    {
+      "step": 2,
+      "title": "Pre-Breathe Initiation",
+      "instruction": "Connect to the suit's oxygen supply and begin pre-breathing 100% oxygen. Start the 60-minute timer."
+    },
+    {
+      "step": 3,
+      "title": "Light Exercise",
+      "instruction": "Perform 10 minutes of light exercise on the cycle ergometer to increase nitrogen washout. Maintain a steady heart rate."
+    },
+    {
+      "step": 4,
+      "title": "System Check",
+      "instruction": "While pre-breathing, perform a full systems check of the EMU. Verify comms, life support, and battery levels are nominal."
+    },
+    {
+      "step": 5,
+      "title": "Airlock Depressurization",
+      "instruction": "Enter the airlock. Close and seal the inner hatch. Initiate airlock depressurization sequence."
+    },
+    {
+      "step": 6,
+      "title": "Final Go/No-Go Poll",
+      "instruction": "Confirm with mission control for final Go/No-Go for EVA. Await their confirmation before opening the outer hatch."
+    }
+  ]
+}

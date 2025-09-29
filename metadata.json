@@ -1,0 +1,8 @@
+{
+  "name": "MAITRI - Astronaut AI Companion",
+  "description": "MAITRI is an AI companion designed to support astronauts, providing mission-critical information, system monitoring, and personal assistance in a touch-oriented interface.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
