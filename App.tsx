@@ -12,39 +12,43 @@ import { parseCommand } from './services/commandService';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
-  const [isListening, setIsListening] = useState(false);
 
   const navigateTo = useCallback((view: View) => {
     setCurrentView(view);
   }, []);
 
   useEffect(() => {
-    // This is a simplified hotword implementation. In a real app,
-    // this would be a more sophisticated, lower-power model.
-    console.log("Setting up voice commands. Say 'Hey MAITRI' then a command like 'go to dashboard'.");
+    console.log("Setting up global voice commands. Say 'Hey MAITRI, go to dashboard'.");
+    
     const handleVoiceResult = (transcript: string) => {
-      const lowerTranscript = transcript.toLowerCase();
-      if (isListening) {
-        const view = parseCommand(lowerTranscript);
-        if (view) {
-          console.log(`Command recognized: "${transcript}". Navigating to ${view}.`);
-          navigateTo(view);
-        } else {
-          console.log(`Command not recognized: "${transcript}"`);
+        const lower = transcript.toLowerCase();
+        // Listen for the hotword followed by a command in a single phrase
+        if (lower.includes('hey maitri')) {
+            console.log(`Hotword detected in phrase: "${transcript}"`);
+            const commandPhrase = lower.substring(lower.indexOf('hey maitri') + 'hey maitri'.length).trim();
+            
+            if (commandPhrase) {
+              const view = parseCommand(commandPhrase);
+              if (view) {
+                  console.log(`Command recognized: "${commandPhrase}". Navigating to ${view}.`);
+                  navigateTo(view);
+              } else {
+                  console.log(`Command not recognized in phrase: "${commandPhrase}"`);
+              }
+            }
         }
-        setIsListening(false);
-      } else if (lowerTranscript.includes('hey maitri')) {
-        console.log("Hotword detected! Listening for command...");
-        setIsListening(true);
-        // Add feedback for user, e.g. a sound or visual cue
-      }
     };
 
-    const stopListening = startListening(handleVoiceResult, () => {});
-    return () => {
-      stopListening();
-    };
-  }, [isListening, navigateTo]);
+    // Use continuous listening for the global command parser
+    const stopListening = startListening(
+      handleVoiceResult,
+      () => {}, // No interim results needed for this
+      { continuous: true }
+    );
+    
+    // Cleanup on unmount
+    return stopListening;
+  }, [navigateTo]);
 
 
   const renderView = () => {

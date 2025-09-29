@@ -51,30 +51,27 @@ const ProcedureAssistant: React.FC<ProcedureAssistantProps> = ({ checklist, isLo
   useEffect(() => {
     if(isLastStep || !checklist || !step) return;
 
+    setIsListening(true);
     const handleVoiceResult = (transcript: string) => {
+        setIsListening(false);
         if (transcript.toLowerCase().includes('confirm')) {
             console.log('Confirmation received');
             advanceStep();
         } else if (transcript.toLowerCase().includes('repeat')){
              speak(`Repeating step: ${step.title}. ${step.instruction}`, coPilotVoice);
         }
-        setIsListening(false);
     };
 
-    const stopListening = startListening(handleVoiceResult, () => {});
-    const listeningTimeout = setTimeout(() => {
-      if (isListening) {
-        setIsListening(false);
-        stopListening();
-      }
-    }, 7000); // Listen for 7 seconds
-
-    setIsListening(true);
+    const stopListening = startListening(
+      handleVoiceResult, 
+      () => {},
+      { continuous: false }
+    );
     
     return () => {
-        cancelSpeech(); // Stop any announcement when step changes or unmounts
+        cancelSpeech();
         stopListening();
-        clearTimeout(listeningTimeout);
+        setIsListening(false);
     };
 
   }, [currentStep, advanceStep, step, isLastStep, checklist, coPilotVoice]);

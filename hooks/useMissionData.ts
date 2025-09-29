@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { MissionChecklist, CadenceItem } from '../types';
-import missionPacket from '../data/missionDataPacket.json';
 
 interface MissionData {
   missionCadence: CadenceItem[] | null;
@@ -18,9 +17,14 @@ export const useMissionData = (): MissionData => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate async loading of static data
-    setTimeout(() => {
+    const loadMissionData = async () => {
       try {
+        const response = await fetch('/data/missionDataPacket.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const missionPacket = await response.json();
+        
         const cadence: CadenceItem[] = missionPacket.details.cadence;
         const checklist: MissionChecklist = missionPacket.details.checklist;
 
@@ -35,11 +39,13 @@ export const useMissionData = (): MissionData => {
           missionCadence: null,
           error: 'Failed to load static mission data.',
         });
-        console.error("Failed to parse mission packet data:", e);
+        console.error("Failed to fetch or parse mission packet data:", e);
       } finally {
         setIsLoading(false);
       }
-    }, 500); // simulate network delay
+    };
+    
+    loadMissionData();
   }, []);
 
   return { ...data, isLoading };

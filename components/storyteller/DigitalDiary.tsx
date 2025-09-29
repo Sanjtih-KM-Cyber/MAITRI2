@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startListening } from '../../services/voiceService';
 import { summarizeText, generateNarrative } from '../../services/localAIService';
@@ -8,24 +8,22 @@ const DigitalDiary: React.FC = () => {
   const [entry, setEntry] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const stopListeningRef = useRef<(() => void) | null>(null);
 
   const handleDictate = useCallback(() => {
-    if (isListening) return;
-    setIsListening(true);
-    const stopListening = startListening(
-      (finalTranscript) => {
-        setEntry(prev => (prev ? `${prev.trim()} ${finalTranscript}` : finalTranscript).trim());
-        setIsListening(false);
-      },
-      () => {}
-    );
-    // Stop after a period of silence
-    const timer = setTimeout(() => {
-      stopListening();
-      if (isListening) setIsListening(false);
-    }, 5000);
-
-    return () => clearTimeout(timer);
+    if (isListening) {
+      stopListeningRef.current?.();
+      setIsListening(false);
+    } else {
+      setIsListening(true);
+      stopListeningRef.current = startListening(
+        (finalTranscript) => {
+          setEntry(prev => (prev ? `${prev.trim()} ${finalTranscript}` : finalTranscript).trim());
+        },
+        () => {},
+        { continuous: true }
+      );
+    }
   }, [isListening]);
 
   const handleGenerateLegacy = async () => {

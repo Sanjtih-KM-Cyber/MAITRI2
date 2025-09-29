@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startListening } from '../../services/voiceService';
 
@@ -6,30 +6,30 @@ const SymptomLogger: React.FC = () => {
     const { t } = useTranslation();
     const [log, setLog] = useState('');
     const [isListening, setIsListening] = useState(false);
+    // FIX: Initialize the ref with null and clarify the type for better type safety and consistency.
+    const stopListeningRef = useRef<(() => void) | null>(null);
 
     const handleDictate = useCallback(() => {
-        if (isListening) return;
-
-        setIsListening(true);
-        const stopListening = startListening(
-            (finalTranscript) => {
-                setLog(prev => prev ? `${prev} ${finalTranscript}` : finalTranscript);
-                setIsListening(false);
-            },
-            (interimTranscript) => {
-                // Could show interim results if desired
-            }
-        );
-
-        // Stop listening after a timeout if user stops talking
-        setTimeout(() => {
-            stopListening();
-            if(isListening) setIsListening(false);
-        }, 5000);
+        if (isListening) {
+            stopListeningRef.current?.();
+            setIsListening(false);
+        } else {
+            setIsListening(true);
+            stopListeningRef.current = startListening(
+                (finalTranscript) => {
+                    setLog(prev => (prev ? `${prev.trim()} ${finalTranscript}` : finalTranscript).trim());
+                    setIsListening(false); // Stop after one final result for this use case.
+                },
+                () => {},
+                { continuous: true } // Use continuous to allow longer dictation
+            );
+        }
     }, [isListening]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        stopListeningRef.current?.();
+        setIsListening(false);
         if(!log.trim()) return;
         console.log("Symptom Logged:", log);
         // Here you would typically send the log to a medical database

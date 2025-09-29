@@ -28,12 +28,13 @@ const SmartInput: React.FC<SmartInputProps> = ({ onSendMessage, isLoading, onLis
       
       stopListeningRef.current = startListening(
         (finalTranscript) => {
-          setInput((initialText ? initialText + ' ' : '') + finalTranscript);
-          setIsListening(false);
+          setInput((prev) => (prev.trim() ? prev.trim() + ' ' : '') + finalTranscript);
+          // In continuous mode, don't stop automatically, user will click again.
         },
         (interimTranscript) => {
-          setInput((initialText ? initialText + ' ' : '') + interimTranscript);
-        }
+          setInput(initialText ? initialText + ' ' + interimTranscript : interimTranscript);
+        },
+        { continuous: true }
       );
     }
   }, [isListening, input]);
