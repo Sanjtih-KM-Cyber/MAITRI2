@@ -32,10 +32,10 @@ const PlaymateIcon = () => (
     </svg>
 );
 
-// FIX: Added 'as const' to the array returned by this function. This tells TypeScript
+// Added 'as const' to the array returned by this function. This tells TypeScript
 // to infer the 'id' properties as specific string literals (e.g., 'guardian') instead of
 // the general 'string' type. This makes the type compatible with the 'View' type expected
-// by the onRoleSelect handler, resolving the type error on line 123.
+// by the onRoleSelect handler, resolving the type error.
 const getRoles = (t: (key: string) => string) => [
     { id: 'guardian', name: t('dial.guardian'), icon: <GuardianIcon />, angle: -150 },
     { id: 'coPilot', name: t('dial.coPilot'), icon: <CoPilotIcon />, angle: -110 },
@@ -87,9 +87,17 @@ const TacticalDial: React.FC<{ onRoleSelect: (view: View) => void }> = ({ onRole
         if (longPressTimerRef.current) {
             clearTimeout(longPressTimerRef.current);
         }
+        // FIX: Pass the event `e` to the drag handlers to fix the "Expected 1 arguments, but got 0" error.
         ('touches' in e) ? dragHandlers.onTouchEnd(e) : dragHandlers.onMouseUp(e);
-        if (!isMovedRef.current && isOpen) {
-            setIsOpen(false);
+        if (!isMovedRef.current && !isOpen) { // Also check if it's not already open to prevent toggle on drag
+            // A simple click without a long press. Could be used for a default action.
+            // For now, it does nothing if the menu isn't open.
+        } else if (isOpen) {
+            // If the menu is open and it wasn't a drag, it implies a click on the backdrop, so we close.
+            // Or it's the end of a drag, in which case we do nothing to the open state.
+            if (!isMovedRef.current) {
+                setIsOpen(false);
+            }
         }
     }, [dragHandlers, isOpen]);
     

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startListening } from '../../services/voiceService';
 import { summarizeText, generateNarrative } from '../../services/localAIService';
+import VoiceVideoFeedback from '../common/VoiceVideoFeedback';
 
 const DigitalDiary: React.FC = () => {
   const { t } = useTranslation();
@@ -119,6 +120,7 @@ const DigitalDiary: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col">
+      <VoiceVideoFeedback isActive={isListening || isRecording} />
       <h3 className="text-xl font-semibold text-primary-text mb-4">{t('storyteller.digitalDiary.title')}</h3>
       {videoBlobUrl && (
         <div className="mb-4">

@@ -99,24 +99,95 @@ export const startListening = (
   };
 };
 
-/**
- * Uses the browser's speech synthesis to speak a given text, interrupting any ongoing speech.
- * @param text The text to be spoken.
- */
-export const speak = (text: string): void => {
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel(); // Interrupt any ongoing speech
-    const utterance = new SpeechSynthesisUtterance(text);
-    // Optional: configure voice, pitch, rate
-    // const voices = window.speechSynthesis.getVoices();
-    // utterance.voice = voices[0];
-    utterance.pitch = 1;
-    utterance.rate = 1;
-    window.speechSynthesis.speak(utterance);
-  } else {
-    console.warn("Speech Synthesis not supported in this browser.");
-  }
+// --- Speech Synthesis Enhancement ---
+
+let voices: SpeechSynthesisVoice[] = [];
+const getVoices = (): Promise<SpeechSynthesisVoice[]> => {
+  return new Promise((resolve) => {
+    if (voices.length) {
+      return resolve(voices);
+    }
+    // The voices list is often loaded asynchronously.
+    const availableVoices = window.speechSynthesis.getVoices();
+    if (availableVoices.length) {
+      voices = availableVoices;
+      return resolve(voices);
+    }
+    window.speechSynthesis.onvoiceschanged = () => {
+      voices = window.speechSynthesis.getVoices();
+      resolve(voices);
+    };
+  });
 };
+
+// Pre-warm the voices cache on script load.
+if ('speechSynthesis' in window) {
+  getVoices();
+}
+
+
+/**
+ * Uses the browser's speech synthesis to speak a given text, with high-quality voice selection.
+ * @param text The text to be spoken.
+ * @param gender An optional gender preference for the voice ('male' | 'female').
+ */
+export const speak = async (text: string, gender?: 'male' | 'female'): Promise<void> => {
+  if (!('speechSynthesis' in window)) {
+    console.warn("Speech Synthesis not supported in this browser.");
+    return;
+  }
+  
+  const allVoices = await getVoices();
+  if (!allVoices.length) {
+    console.warn("No speech synthesis voices available. Using browser default.");
+    const utterance = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+    return;
+  }
+
+  let selectedVoice: SpeechSynthesisVoice | null = null;
+  const targetLang = 'en';
+
+  const isHighQuality = (v: SpeechSynthesisVoice) => v.name.includes('Google') || v.name.includes('Microsoft');
+  const genderMatch = (name: string, g: 'male' | 'female') => {
+      const lowerName = name.toLowerCase();
+      if (g === 'female') return lowerName.includes('female') || lowerName.includes('woman') || lowerName.includes('zira') || lowerName.includes('eva');
+      if (g === 'male') return lowerName.includes('male') || lowerName.includes('man') || lowerName.includes('david');
+      return false;
+  };
+  
+  const localVoices = allVoices.filter(v => v.lang.startsWith(targetLang));
+
+  if (gender) {
+    // 1. Try for high-quality, gender-matched voice
+    selectedVoice = localVoices.find(v => isHighQuality(v) && genderMatch(v.name, gender)) || null;
+    // 2. Fallback to any quality, gender-matched voice
+    if (!selectedVoice) {
+      selectedVoice = localVoices.find(v => genderMatch(v.name, gender)) || null;
+    }
+  }
+
+  // 3. If no gender specified or no match, find best default (prefer high-quality female)
+  if (!selectedVoice) {
+      selectedVoice = localVoices.find(v => isHighQuality(v) && genderMatch(v.name, 'female')) 
+        || localVoices.find(isHighQuality)
+        || null;
+  }
+
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.voice = selectedVoice || allVoices.find(v => v.default) || allVoices[0];
+  utterance.pitch = 1;
+  utterance.rate = 1;
+
+  if(utterance.voice) {
+      console.log(`Using voice: ${utterance.voice.name}`);
+  }
+
+  window.speechSynthesis.speak(utterance);
+};
+
 
 /**
  * Cancels any ongoing or queued speech synthesis.

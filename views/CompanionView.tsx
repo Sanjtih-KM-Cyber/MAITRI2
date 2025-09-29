@@ -4,30 +4,41 @@ import { View, Message } from '../types';
 import MessageBubble from '../components/chat/MessageBubble';
 import SmartInput from '../components/chat/SmartInput';
 import { getChatResponseStream } from '../services/localAIService';
-import { useTheme } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
+import { getChatHistory, saveChatMessage } from '../services/chatPersistenceService';
+// FIX: Import the 'speak' function to enable Text-to-Speech (TTS) for AI responses.
+import { speak } from '../services/voiceService';
 
 interface CompanionViewProps {
   setView?: (view: View) => void;
-  systemPrompt?: string; // Optional prompt to set AI persona
+  systemPrompt?: string;
   initialMessage?: string;
+  persona: View; // The persona for this chat instance
+  onListeningStateChange?: (isListening: boolean) => void;
 }
 
-const CompanionView: React.FC<CompanionViewProps> = ({ setView, systemPrompt, initialMessage }) => {
+const CompanionView: React.FC<CompanionViewProps> = ({ setView, systemPrompt, initialMessage, persona, onListeningStateChange }) => {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { accentColor } = useTheme();
+  // FIX: Destructure 'coPilotVoice' from settings to select the correct voice for TTS.
+  const { isTTSOn, coPilotVoice } = useSettings();
 
   useEffect(() => {
-    const initialMessages: Message[] = [];
-    if(systemPrompt && initialMessage) {
-        initialMessages.push({ role: 'model', text: initialMessage });
-    } else {
-        initialMessages.push({ role: 'model', text: t('chat.initialMessage') });
-    }
-    setMessages(initialMessages);
-  }, [systemPrompt, initialMessage, t]);
+    const loadHistory = async () => {
+        setIsLoading(true);
+        const history = await getChatHistory(persona);
+        if (history.length > 0) {
+            setMessages(history);
+        } else {
+            const initialText = initialMessage || t('chat.initialMessage');
+            setMessages([{ role: 'model', text: initialText }]);
+        }
+        setIsLoading(false);
+    };
+    loadHistory();
+  }, [persona, initialMessage, t]);
 
 
   useEffect(() => {
@@ -39,16 +50,22 @@ const CompanionView: React.FC<CompanionViewProps> = ({ setView, systemPrompt, in
   const handleSendMessage = useCallback(async (inputText: string) => {
     if (!inputText.trim()) return;
 
-    const newUserMessage: Message = { role: 'user', text: inputText };
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const newUserMessage: Message = { role: 'user', text: inputText, timestamp };
+    
+    // Optimistically update UI
     const currentMessages = [...messages, newUserMessage];
     setMessages(currentMessages);
     setIsLoading(true);
 
-    const fullHistory = systemPrompt 
-        ? [{ role: 'system', text: systemPrompt }, ...currentMessages] 
-        : currentMessages;
+    // Persist user message
+    await saveChatMessage(newUserMessage, persona);
 
-    // Add a placeholder for the model's response
+    const historyForAI = currentMessages.map(({ role, text }) => ({ role, text }));
+    const fullHistory = systemPrompt 
+        ? [{ role: 'system', text: systemPrompt }, ...historyForAI] 
+        : historyForAI;
+
     setMessages(prev => [...prev, { role: 'model', text: '...' }]);
     
     try {
@@ -56,12 +73,35 @@ const CompanionView: React.FC<CompanionViewProps> = ({ setView, systemPrompt, in
       const reader = stream.getReader();
       const decoder = new TextDecoder();
       let isFirstChunk = true;
+      let accumulatedText = '';
+      let finalMessage: Message | null = null;
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        
+        if (done) {
+          if (isTTSOn) {
+            // FIX: Call the imported 'speak' function, passing the appropriate voice setting for the Co-Pilot persona.
+            speak(accumulatedText, persona === 'coPilot' ? coPilotVoice : undefined);
+          }
+          const finalTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          finalMessage = { role: 'model', text: accumulatedText, timestamp: finalTimestamp };
+
+          // Persist the final model message
+          await saveChatMessage(finalMessage, persona);
+
+          setMessages(prev => {
+              const lastMessage = prev[prev.length - 1];
+              if(lastMessage?.role === 'model' && finalMessage) {
+                  return [...prev.slice(0, -1), finalMessage]
+              }
+              return prev;
+          });
+          break;
+        }
         
         const chunkText = decoder.decode(value);
+        accumulatedText += chunkText;
 
         setMessages(prev => {
           const lastMessage = prev[prev.length - 1];
@@ -75,17 +115,14 @@ const CompanionView: React.FC<CompanionViewProps> = ({ setView, systemPrompt, in
       }
     } catch (error) {
       console.error("Failed to get AI response:", error);
-      setMessages(prev => {
-         const lastMessage = prev[prev.length - 1];
-         if (lastMessage?.role === 'model') {
-            return [...prev.slice(0, -1), { ...lastMessage, text: t('chat.errorMessage') }];
-         }
-         return [...prev, { role: 'model', text: t('chat.errorMessage') }];
-      });
+      const errorMessage: Message = { role: 'model', text: t('chat.errorMessage') };
+      setMessages(prev => [...prev.slice(0, -1), errorMessage]);
+      await saveChatMessage(errorMessage, persona);
     } finally {
       setIsLoading(false);
     }
-  }, [messages, systemPrompt, t]);
+  // FIX: Add 'coPilotVoice' to the dependency array for the 'handleSendMessage' callback.
+  }, [messages, systemPrompt, t, isTTSOn, persona, coPilotVoice]);
 
 
   return (
@@ -111,14 +148,11 @@ const CompanionView: React.FC<CompanionViewProps> = ({ setView, systemPrompt, in
             {messages.map((msg, index) => (
                 <MessageBubble key={index} message={msg} />
             ))}
-            {isLoading && messages[messages.length-1].role === 'user' && (
-              <MessageBubble message={{role: 'model', text: '...'}} />
-            )}
         </div>
       </div>
 
       <div className="flex-shrink-0">
-        <SmartInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+        <SmartInput onSendMessage={handleSendMessage} isLoading={isLoading} onListeningStateChange={onListeningStateChange} />
       </div>
 
     </div>

@@ -1,4 +1,3 @@
-// FIX: Import React to make the 'React' namespace available for event types.
 import React, { useState, useRef, useCallback } from 'react';
 
 export const useDraggable = (initialPos = { x: 30, y: window.innerHeight - 120 }) => {
@@ -28,7 +27,8 @@ export const useDraggable = (initialPos = { x: 30, y: window.innerHeight - 120 }
     });
   }, []);
   
-  const handleDragEnd = useCallback(() => {
+  // Added event argument to handler for signature consistency, resolving a type error in the calling component.
+  const handleDragEnd = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     isDraggingRef.current = false;
   }, []);
 

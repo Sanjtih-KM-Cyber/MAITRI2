@@ -4,6 +4,7 @@ import { View } from '../types';
 import MassProtocol from '../components/guardian/MassProtocol';
 import SymptomLogger from '../components/guardian/SymptomLogger';
 import { usePsycheState } from '../hooks/usePsycheState';
+import { useMissionData } from '../hooks/useMissionData';
 
 interface GuardianViewProps {
   setView: (view: View) => void;
@@ -11,6 +12,7 @@ interface GuardianViewProps {
 
 const GuardianView: React.FC<GuardianViewProps> = ({ setView }) => {
   const { wellness, videoRef, status, error } = usePsycheState();
+  const { missionCadence } = useMissionData();
   const { t } = useTranslation();
 
   const getStatusColor = (score: number) => {
@@ -60,7 +62,7 @@ const GuardianView: React.FC<GuardianViewProps> = ({ setView }) => {
         <SymptomLogger />
         
         <div className="lg:col-span-2">
-            <MassProtocol />
+            <MassProtocol workoutPlan={missionCadence} />
         </div>
       </div>
     </div>

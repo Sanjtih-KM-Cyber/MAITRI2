@@ -1,26 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from '../types';
 import CompanionView from './CompanionView';
+import { PLAYMATE_SYSTEM_PROMPT } from '../config/ai_prompts';
+import VoiceVideoFeedback from '../components/common/VoiceVideoFeedback';
 
 interface PlaymateViewProps {
   setView: (view: View) => void;
 }
 
-const gameMasterPrompt = `You are MAITRI, acting as the Game Master for an interactive, text-based RPG called "Cosmic Chronicles". The user is an astronaut on a long-duration mission. Your goal is to create an engaging, imaginative, and collaborative storytelling experience. 
-
-- Start by presenting the user with an intriguing scenario on a newly discovered planet, a mysterious space station, or a strange cosmic anomaly.
-- Describe the scene vividly. Use sensory details.
-- Always end your response by presenting the user with 2-3 clear choices or asking them what they want to do.
-- Keep the tone adventurous and slightly mysterious.
-- Remember the user's previous choices and weave them into the ongoing narrative.`;
-
 const PlaymateView: React.FC<PlaymateViewProps> = ({ setView }) => {
   const { t } = useTranslation();
+  const [isChatListening, setIsChatListening] = useState(false);
 
   return (
-    <div className="h-full w-full p-8 animate-fadeIn flex flex-col">
-      <header className="flex items-center mb-8 flex-shrink-0">
+    <div className="h-full w-full p-4 md:p-8 animate-fadeIn flex flex-col">
+      <header className="flex items-center mb-4 md:mb-8 flex-shrink-0">
         <button
           onClick={() => setView('dashboard')}
           aria-label={t('common.backToDashboard')}
@@ -31,12 +26,15 @@ const PlaymateView: React.FC<PlaymateViewProps> = ({ setView }) => {
           </svg>
           <span className="text-lg font-medium hidden md:block">{t('common.dashboard')}</span>
         </button>
-        <h1 className="text-3xl font-bold text-primary-text mx-auto pr-16 md:pr-24">{t('views.playmate.title')}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-primary-text mx-auto pr-16 md:pr-24">{t('views.playmate.title')}</h1>
       </header>
-      <div className="flex-grow flex flex-col">
+      <div className="flex-grow flex flex-col relative">
+        <VoiceVideoFeedback isActive={isChatListening} />
         <CompanionView 
-          systemPrompt={gameMasterPrompt}
+          persona="playmate"
+          systemPrompt={PLAYMATE_SYSTEM_PROMPT}
           initialMessage={t('playmate.initialMessage')}
+          onListeningStateChange={setIsChatListening}
         />
       </div>
     </div>

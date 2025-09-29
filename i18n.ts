@@ -1,10 +1,14 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import HttpApi from 'i18next-http-backend';
+// FIX: The CDN build for this library does not expose a standard ES module default export.
+// A namespace import (`* as ...`) is required to load the module correctly, similar
+// to how the Supabase client is imported.
+import * as Backend from 'i18next-http-backend';
 
 i18n
   .use(initReactI18next) // passes i18n down to react-i18next
-  .use(HttpApi) // new
+  // FIX: Pass the imported module namespace directly to `.use()`.
+  .use(Backend)
   .init({
     // the translations
     // (tip move them in a JSON file and import them,

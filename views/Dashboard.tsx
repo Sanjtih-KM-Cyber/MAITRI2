@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from '../types';
 import { useTheme } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
 import CompanionWidget from '../components/dashboard/widgets/CompanionWidget';
 import PsycheStateRing from '../components/dashboard/widgets/PsycheStateRing';
 import MissionCadence from '../components/dashboard/widgets/MissionCadence';
@@ -22,18 +23,33 @@ const GlassWidget: React.FC<{ children: React.ReactNode; className?: string; }> 
 const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   const { changeAccentColor } = useTheme();
   const { t, i18n } = useTranslation();
+  const { isTTSOn, toggleTTS } = useSettings();
 
   return (
     <div className="h-full w-full p-8 animate-fadeIn flex flex-col">
       <header className="mb-8 flex-shrink-0">
         <h1 className="text-4xl font-bold text-primary-text">{t('dashboard.title')}</h1>
         <p className="text-secondary-text text-lg">{t('dashboard.subtitle')}</p>
-        <div className="flex items-center space-x-2 mt-4">
+        <div className="flex items-center space-x-4 mt-4">
           <button aria-label={t('dashboard.theme.earthrise')} onClick={() => changeAccentColor('#4A90E2')} className="w-6 h-6 rounded-full bg-[#4A90E2] border-2 border-white/50 focus:outline-none focus:ring-2 focus:ring-white"></button>
           <button aria-label={t('dashboard.theme.warning')} onClick={() => changeAccentColor('#E24A4A')} className="w-6 h-6 rounded-full bg-[#E24A4A] border-2 border-white/50 focus:outline-none focus:ring-2 focus:ring-white"></button>
           <button aria-label={t('dashboard.theme.nominal')} onClick={() => changeAccentColor('#4AE28A')} className="w-6 h-6 rounded-full bg-[#4AE28A] border-2 border-white/50 focus:outline-none focus:ring-2 focus:ring-white"></button>
           
-          <div className="border-l border-widget-border h-6 mx-2"></div>
+          <div className="border-l border-widget-border h-6"></div>
+
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-secondary-text">{t('dashboard.tts.label')}</span>
+            <button
+              onClick={toggleTTS}
+              role="switch"
+              aria-checked={isTTSOn}
+              className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${isTTSOn ? 'bg-primary-accent' : 'bg-gray-600'}`}
+            >
+              <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${isTTSOn ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
+          <div className="border-l border-widget-border h-6"></div>
 
           <button onClick={() => i18n.changeLanguage('en')} className={`px-3 py-1 text-sm rounded-md ${i18n.language === 'en' ? 'bg-primary-accent text-white' : 'bg-widget-background'}`}>{t('dashboard.language.en')}</button>
           <button onClick={() => i18n.changeLanguage('hi')} className={`px-3 py-1 text-sm rounded-md ${i18n.language === 'hi' ? 'bg-primary-accent text-white' : 'bg-widget-background'}`}>{t('dashboard.language.hi')}</button>

@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CadenceItem } from '../../../types';
 
-const initialWorkout = [
-  { id: 'treadmill', name: 'Treadmill Run (ARED)', duration: '45 min', completed: false },
-  { id: 'squats', name: 'Barbell Squats', sets: '3x8', completed: false },
-  { id: 'deadlifts', name: 'Resistive Deadlifts', sets: '3x5', completed: false },
-  { id: 'press', name: 'Overhead Press', sets: '3x8', completed: false },
-  { id: 'core', name: 'Core Stabilization', duration: '15 min', completed: false },
-];
+interface MassProtocolProps {
+  workoutPlan: CadenceItem[] | null;
+}
 
-const MassProtocol: React.FC = () => {
-  const [workout, setWorkout] = useState(initialWorkout);
+const MassProtocol: React.FC<MassProtocolProps> = ({ workoutPlan }) => {
+  const [workout, setWorkout] = useState<CadenceItem[]>([]);
   const { t } = useTranslation();
+
+  useEffect(() => {
+    if(workoutPlan) {
+        setWorkout(workoutPlan.map(item => ({...item, completed: false})))
+    }
+  }, [workoutPlan]);
 
   const toggleComplete = (id: string) => {
     setWorkout(
@@ -21,7 +24,16 @@ const MassProtocol: React.FC = () => {
     );
   };
   
-  const completionPercentage = (workout.filter(item => item.completed).length / workout.length) * 100;
+  const completionPercentage = workout.length > 0 ? (workout.filter(item => item.completed).length / workout.length) * 100 : 0;
+
+  if (!workoutPlan) {
+      return (
+        <div className="bg-widget-background/50 border border-widget-border rounded-2xl shadow-inner backdrop-blur-md p-6">
+            <h3 className="text-xl font-semibold text-primary-text mb-4">{t('guardian.massProtocol.title')}</h3>
+            <p className="text-secondary-text">{t('coPilot.procedureAssistant.noData')}</p>
+        </div>
+      )
+  }
 
   return (
     <div className="bg-widget-background/50 border border-widget-border rounded-2xl shadow-inner backdrop-blur-md p-6">

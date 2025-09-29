@@ -10,6 +10,9 @@
     "language": {
       "en": "English",
       "hi": "हिंदी"
+    },
+    "tts": {
+        "label": "टीटीएस आउटपुट"
     }
   },
   "widgets": {
@@ -43,7 +46,10 @@
     "inputPlaceholder": "मैत्री के साथ चैट करें...",
     "inputPlaceholderLoading": "मैत्री जवाब दे रही है...",
     "sendMessage": "संदेश भेजें",
-    "errorMessage": "क्षमा करें, मुझे एक त्रुटि का सामना करना पड़ा।"
+    "errorMessage": "क्षमा करें, मुझे एक त्रुटि का सामना करना पड़ा।",
+    "listening": "सुन रहा है...",
+    "startListening": "सुनना शुरू करें",
+    "stopListening": "सुनना बंद करें"
   },
   "common": {
     "dashboard": "डैशबोर्ड",
@@ -83,14 +89,21 @@
     }
   },
   "coPilot": {
+    "initialMessage": "सह-पायलट तैयार। मैं मिशन में कैसे सहायता कर सकती हूँ?",
     "procedureAssistant": {
       "loading": "प्रक्रिया लोड हो रही है...",
+      "noData": "कोई प्रक्रिया डेटा उपलब्ध नहीं है।",
       "error": "प्रक्रिया लोड करने में विफल। कृपया बाद में पुनः प्रयास करें।",
       "step": "चरण {{current}} का {{total}}",
       "listening": "\"पुष्टि करें\" के लिए सुन रहा है...",
       "confirmNext": "पुष्टि करें और अगला",
       "procedureComplete": "प्रक्रिया पूर्ण",
       "reset": "रीसेट"
+    },
+    "voice": {
+        "label": "आवाज़",
+        "female": "महिला",
+        "male": "पुरुष"
     }
   },
   "storyteller": {

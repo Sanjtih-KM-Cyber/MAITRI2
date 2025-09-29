@@ -1,87 +1,62 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startListening, speak, cancelSpeech } from '../../services/voiceService';
+import { useSettings } from '../../context/SettingsContext';
+import { MissionChecklist } from '../../../types';
 
-// Define types for the checklist data for type safety
-interface ChecklistStep {
-  step: number;
-  title: string;
-  instruction: string;
+interface ProcedureAssistantProps {
+    checklist: MissionChecklist | null;
+    isLoading: boolean;
 }
 
-interface MissionChecklist {
-  title: string;
-  procedureID: string;
-  steps: ChecklistStep[];
-}
-
-const ProcedureAssistant: React.FC = () => {
+const ProcedureAssistant: React.FC<ProcedureAssistantProps> = ({ checklist, isLoading }) => {
   const { t } = useTranslation();
-  const [missionChecklist, setMissionChecklist] = useState<MissionChecklist | null>(null);
+  const { coPilotVoice } = useSettings();
   const [currentStep, setCurrentStep] = useState(0);
   const [isListening, setIsListening] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Fetch the checklist data when the component mounts
-    const loadChecklist = async () => {
-      try {
-        // The path should be relative to the public/index.html file
-        const response = await fetch('/data/missionChecklist.json');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data: MissionChecklist = await response.json();
-        setMissionChecklist(data);
-      } catch (e) {
-        console.error("Could not load mission checklist:", e);
-        setError(t('coPilot.procedureAssistant.error'));
-      }
-    };
-    loadChecklist();
-  }, [t]);
-
-  const step = missionChecklist?.steps[currentStep];
-  const isLastStep = missionChecklist ? currentStep === missionChecklist.steps.length - 1 : false;
+  
+  const step = checklist?.steps[currentStep];
+  const isLastStep = checklist ? currentStep === checklist.steps.length - 1 : false;
 
   const advanceStep = useCallback(() => {
-    if (!missionChecklist || isLastStep) {
-        if(isLastStep) speak("Procedure complete.");
+    if (!checklist || isLastStep) {
+        if(isLastStep) speak("Procedure complete.", coPilotVoice);
         return;
     }
     
     setCurrentStep(prev => prev + 1);
-    const nextStep = missionChecklist.steps[currentStep + 1];
-    speak(`Next step: ${nextStep.title}. ${nextStep.instruction}`);
+    const nextStep = checklist.steps[currentStep + 1];
+    speak(`Next step: ${nextStep.title}. ${nextStep.instruction}`, coPilotVoice);
 
-  }, [currentStep, isLastStep, missionChecklist]);
+  }, [currentStep, isLastStep, checklist, coPilotVoice]);
   
   const resetProcedure = () => {
-      if (!missionChecklist) return;
+      if (!checklist) return;
       setCurrentStep(0);
-      const firstStep = missionChecklist.steps[0];
-      speak(`Restarting procedure: ${missionChecklist.title}. First step: ${firstStep.title}. ${firstStep.instruction}`);
+      const firstStep = checklist.steps[0];
+      speak(`Restarting procedure: ${checklist.title}. First step: ${firstStep.title}. ${firstStep.instruction}`, coPilotVoice);
   }
 
   // Effect to announce the procedure once it's loaded
   useEffect(() => {
-    if (missionChecklist) {
-      const firstStep = missionChecklist.steps[0];
-      speak(`Procedure loaded: ${missionChecklist.title}. First step: ${firstStep.title}. ${firstStep.instruction}`);
+    if (checklist) {
+      setCurrentStep(0); // Reset step when checklist changes
+      const firstStep = checklist.steps[0];
+      speak(`Procedure loaded: ${checklist.title}. First step: ${firstStep.title}. ${firstStep.instruction}`, coPilotVoice);
     }
     return () => cancelSpeech(); // Stop speech if component unmounts
-  }, [missionChecklist]);
+  }, [checklist, coPilotVoice]);
 
   // Effect for voice command listening
   useEffect(() => {
-    if(isLastStep || !missionChecklist || !step) return;
+    if(isLastStep || !checklist || !step) return;
 
     const handleVoiceResult = (transcript: string) => {
         if (transcript.toLowerCase().includes('confirm')) {
             console.log('Confirmation received');
             advanceStep();
         } else if (transcript.toLowerCase().includes('repeat')){
-             speak(`Repeating step: ${step.title}. ${step.instruction}`);
+             speak(`Repeating step: ${step.title}. ${step.instruction}`, coPilotVoice);
         }
         setIsListening(false);
     };
@@ -102,14 +77,10 @@ const ProcedureAssistant: React.FC = () => {
         clearTimeout(listeningTimeout);
     };
 
-  }, [currentStep, advanceStep, step, isLastStep, missionChecklist]);
+  }, [currentStep, advanceStep, step, isLastStep, checklist, coPilotVoice]);
 
 
-  if (error) {
-    return <div className="w-full max-w-2xl text-center text-red-400">{error}</div>
-  }
-
-  if (!missionChecklist || !step) {
+  if (isLoading) {
     return (
       <div className="w-full max-w-2xl text-center">
         <h2 className="text-xl font-semibold text-secondary-text mb-2 animate-pulse">{t('coPilot.procedureAssistant.loading')}</h2>
@@ -117,10 +88,18 @@ const ProcedureAssistant: React.FC = () => {
     );
   }
 
+  if (!checklist || !step) {
+    return (
+       <div className="w-full max-w-2xl text-center">
+        <h2 className="text-xl font-semibold text-secondary-text mb-2">{t('coPilot.procedureAssistant.noData')}</h2>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-2xl text-center">
-      <h2 className="text-xl font-semibold text-secondary-text mb-2">{missionChecklist.title}</h2>
-      <p className="text-lg text-secondary-text mb-6">{t('coPilot.procedureAssistant.step', { current: currentStep + 1, total: missionChecklist.steps.length })}</p>
+      <h2 className="text-xl font-semibold text-secondary-text mb-2">{checklist.title}</h2>
+      <p className="text-lg text-secondary-text mb-6">{t('coPilot.procedureAssistant.step', { current: currentStep + 1, total: checklist.steps.length })}</p>
       
       <div className="bg-background/50 p-8 rounded-xl border-2 border-primary-accent shadow-glow mb-8">
         <h3 className="text-3xl font-bold text-primary-text mb-4">{step.title}</h3>

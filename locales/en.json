@@ -10,6 +10,9 @@
     "language": {
         "en": "English",
         "hi": "हिंदी"
+    },
+    "tts": {
+        "label": "TTS Output"
     }
   },
   "widgets": {
@@ -43,7 +46,10 @@
     "inputPlaceholder": "Chat with MAITRI...",
     "inputPlaceholderLoading": "MAITRI is responding...",
     "sendMessage": "Send message",
-    "errorMessage": "Sorry, I encountered an error."
+    "errorMessage": "Sorry, I encountered an error.",
+    "listening": "Listening...",
+    "startListening": "Start listening",
+    "stopListening": "Stop listening"
   },
   "common": {
       "dashboard": "Dashboard",
@@ -83,14 +89,21 @@
       }
   },
   "coPilot": {
+      "initialMessage": "Co-Pilot ready. How can I assist with the mission?",
       "procedureAssistant": {
           "loading": "Loading Procedure...",
+          "noData": "No procedure data available.",
           "error": "Failed to load procedure. Please try again later.",
           "step": "Step {{current}} of {{total}}",
           "listening": "Listening for \"Confirm\"...",
           "confirmNext": "Confirm & Next",
           "procedureComplete": "Procedure Complete",
           "reset": "Reset"
+      },
+      "voice": {
+          "label": "Voice",
+          "female": "Female",
+          "male": "Male"
       }
   },
   "storyteller": {
